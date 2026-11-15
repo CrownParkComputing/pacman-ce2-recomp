@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Final Android launcher name PAC-MAN CE2, with a non-debuggable app and clean APK filename. Existing package ID and signing identity retain installed saves and settings.
+
 - Per-game Android graphics-driver settings: bundled Turnip by default, system-driver choice, validated ZIP import and a launcher shortcut that works without the renderer.
 
 - Initial PAC-MAN Championship Edition 2 Linux x86-64 and Android ARM64 port, based on the Tempest 4000 runtime and shadPS4 renderer.

@@ -2,7 +2,7 @@
 
 Tested on Retroid Pocket Flip2 (Snapdragon 865, Adreno 650, Android 13).
 The application ID is `com.crownparkcomputing.pacmance2`, activity
-`.PacmanActivity`, label `PAC-MAN CE2 (dev)`. It installs separately from Tempest.
+`.PacmanActivity`, label `PAC-MAN CE2`. It installs separately from Tempest.
 Game files stay outside the APK.
 
 ## Host prerequisites
@@ -75,7 +75,7 @@ Do not commit signing keys.
 bash tools/package_android.sh /path/to/Turnip-v27.0.0-20261111-r2.zip
 ```
 
-Output: `out/android-app/pacman-ce2-dev.apk`. APK signing is checked by the script.
+Output: `out/android-app/pacman-ce2.apk`. APK signing is checked by the script.
 The APK includes SDL, runtime, driver and launcher resources, without game files.
 
 ## Prepare game and install
@@ -94,7 +94,7 @@ files separately, and follows the selected game's shared module/trophy links.
 For a runtime-only update, with game data already staged:
 
 ```bash
-adb -s ADB_SERIAL install -r out/android-app/pacman-ce2-dev.apk
+adb -s ADB_SERIAL install -r out/android-app/pacman-ce2.apk
 ```
 
 External files are under

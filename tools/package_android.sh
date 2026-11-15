@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Package the experimental Android runner; the user's game stays outside the APK.
+# Package the Android runner; the user's game stays outside the APK.
 set -euo pipefail
 cd -- "$(dirname -- "$0")/.."
 port=$PWD
@@ -51,6 +51,6 @@ cp res/pacman-ce2-icon.png "$package/resources/drawable/pacman_ce2_icon.png"
 keystore=$HOME/.android/debug.keystore
 [[ -f $keystore ]] || { echo 'Create an Android debug keystore first.' >&2; exit 1; }
 "$bt/apksigner" sign --ks "$keystore" --ks-pass pass:android --ks-key-alias androiddebugkey \
-    --key-pass pass:android --out "$port/out/android-app/pacman-ce2-dev.apk" "$package/aligned.apk"
-"$bt/apksigner" verify "$port/out/android-app/pacman-ce2-dev.apk"
-echo "Built $port/out/android-app/pacman-ce2-dev.apk"
+    --key-pass pass:android --out "$port/out/android-app/pacman-ce2.apk" "$package/aligned.apk"
+"$bt/apksigner" verify "$port/out/android-app/pacman-ce2.apk"
+echo "Built $port/out/android-app/pacman-ce2.apk"

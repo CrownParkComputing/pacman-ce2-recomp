@@ -13,7 +13,7 @@ adb=${ADB:-$sdk/platform-tools/adb}
 [[ -x $adb ]] || adb=$(command -v adb)
 package=com.crownparkcomputing.pacmance2
 remote=/sdcard/Android/data/$package/files
-"$adb" -s "$device" install -r out/android-app/pacman-ce2-dev.apk
+"$adb" -s "$device" install -r out/android-app/pacman-ce2.apk
 "$adb" -s "$device" shell mkdir -p "$remote/app0" "$remote/user"
 "$adb" -s "$device" push "$image" "$remote/boot-linked.bin"
 "$adb" -s "$device" push "$profile" "$remote/content.bin"
