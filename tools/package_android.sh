@@ -30,9 +30,10 @@ package=$port/out/android-app/package
 rm -rf -- "$package"
 mkdir -p "$package/classes" "$package/lib/arm64-v8a" "$package/assets"
 python3 tools/stage_android_driver.py "$driver" "$package/assets"
+mapfile -t app_sources < <(rg --files android/java -g '*.java')
 javac -nowarn -source 17 -target 17 -classpath "$platform" -d "$package/classes" \
     "$sdl_source"/android-project/app/src/main/java/org/libsdl/app/*.java \
-    android/java/com/crownparkcomputing/pacmance2/PacmanActivity.java
+    "${app_sources[@]}"
 mapfile -t classes < <(rg --files "$package/classes" -g '*.class')
 "$bt/d8" --release --min-api 31 --lib "$platform" --output "$package" "${classes[@]}"
 cp "$build"/android-libs/*.so "$package/lib/arm64-v8a/"

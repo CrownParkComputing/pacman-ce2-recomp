@@ -25,3 +25,6 @@ dist-*/
 /.env.*
 /save/
 /savedata/
+
+# Locally supplied Android driver archives and signing material.
+/*.zip

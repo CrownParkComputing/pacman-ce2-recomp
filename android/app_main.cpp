@@ -12,6 +12,7 @@
 #include <string>
 #include <unistd.h>
 #include <vulkan/vulkan.h>
+#include "graphics_driver.h"
 
 int tempest_android_boot(const char *image, const char *app0, const char *user);
 namespace {
@@ -51,29 +52,10 @@ void driver() {
     auto *env=static_cast<JNIEnv *>(SDL_GetAndroidJNIEnv());
     auto activity=static_cast<jobject>(SDL_GetAndroidActivity());
     if (!env || !activity) throw std::runtime_error("Android activity unavailable");
-    jclass type=env->GetObjectClass(activity);
-    jmethodID get_assets=env->GetMethodID(type,"getAssets","()Landroid/content/res/AssetManager;");
-    jobject java_assets=env->CallObjectMethod(activity,get_assets);
-    AAssetManager *assets=AAssetManager_fromJava(env,java_assets);
-    AAsset *asset=AAssetManager_open(assets,"libvulkan_freedreno.so",AASSET_MODE_STREAMING);
-    if (!asset) throw std::runtime_error("missing packaged Turnip driver");
-    const std::string directory=std::string(SDL_GetAndroidInternalStoragePath())+"/";
-    FILE *file=fopen((directory+"libvulkan_freedreno.so").c_str(),"wb");
-    if (!file) { AAsset_close(asset); throw std::runtime_error("cannot stage Turnip driver"); }
-    char buffer[65536]; int count;
-    bool okay=true;
-    while ((count=AAsset_read(asset,buffer,sizeof(buffer)))>0)
-        if (fwrite(buffer,1,count,file)!=static_cast<size_t>(count)) { okay=false; break; }
-    AAsset_close(asset);
-    if (fclose(file) || count<0 || !okay) throw std::runtime_error("Turnip driver copy failed");
-    const auto native_libraries=libraries(env,activity);
-    void *loader=adrenotools_open_libvulkan(RTLD_NOW|RTLD_LOCAL,ADRENOTOOLS_DRIVER_CUSTOM,
-        directory.c_str(),native_libraries.c_str(),directory.c_str(),"libvulkan_freedreno.so",nullptr,nullptr);
-    if (!loader) throw std::runtime_error("Turnip Vulkan loader failed");
-    vulkan_proc=reinterpret_cast<PFN_vkGetInstanceProcAddr>(dlsym(loader,"vkGetInstanceProcAddr"));
-    if (!vulkan_proc) throw std::runtime_error("Turnip vkGetInstanceProcAddr missing");
-    env->DeleteLocalRef(java_assets); env->DeleteLocalRef(type); env->DeleteLocalRef(activity);
-    puts("Android: rootless Turnip driver ready");
+    const std::string directory=SDL_GetAndroidInternalStoragePath();
+    vulkan_proc=Ps4Android::LoadGraphicsDriver(env,activity,libraries(env,activity),directory);
+    env->DeleteLocalRef(activity);
+    puts("Android: selected Vulkan driver ready");
 }
 }
 extern "C" PFN_vkGetInstanceProcAddr tempest_android_vulkan_proc() { return vulkan_proc; }

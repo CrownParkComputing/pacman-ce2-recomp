@@ -132,3 +132,5 @@ libadrenotools `8fae8ce254dfc1344527e05301e43f37dea2df80`, and its liblinkernsby
 submodule `aa3975893d83ef1bc84c321ec60c65fbf1287887`. FFmpeg uses the same 9.0.2
 archive hash as the desktop build. Driver binaries are supplied locally and are not
 checked into this repository.
+
+Driver selection is now available from the launcher icon; see [graphics driver settings](android-driver-selection.md). The bundled Turnip remains the default.

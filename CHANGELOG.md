@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Per-game Android graphics-driver settings: bundled Turnip by default, system-driver choice, validated ZIP import and a launcher shortcut that works without the renderer.
+
 - Initial PAC-MAN Championship Edition 2 Linux x86-64 and Android ARM64 port, based on the Tempest 4000 runtime and shadPS4 renderer.
 - Correct display alias publication and packed R8 font detiling; readable Android menus and playable levels with music and sound effects.
 - Faster FEX startup through one fresh host-mapping snapshot per validation request.

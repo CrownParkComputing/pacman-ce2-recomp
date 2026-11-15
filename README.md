@@ -12,3 +12,5 @@ Follow the [Linux build guide](docs/building.md) or [Android build guide](androi
 Current evidence and remaining Android work are recorded in [`docs/ce2-port-status.md`](docs/ce2-port-status.md).
 
 Source is GPL-2.0-or-later. [Third-party notices](THIRD_PARTY_NOTICES.md) record the inherited runtime and dependency origins.
+
+On Android, long-press the game icon → **Graphics driver** to select bundled Turnip (the default), the system driver, or import another driver ZIP. [Driver settings](docs/android-driver-selection.md) apply on the next launch and are separate for each game.

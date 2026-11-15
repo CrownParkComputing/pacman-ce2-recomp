@@ -29,6 +29,12 @@ jobs:
         run: bash build.sh --test
       - name: Python checks
         run: cd tests && python3 -m unittest discover -p 'test_*.py'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Driver ZIP regression
+        run: bash tools/check_android_driver_import.sh
       - name: Test logs
         if: failure()
         uses: actions/upload-artifact@v4

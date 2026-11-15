@@ -102,6 +102,13 @@ External files are under
 `pacman-ce2.log` is the main log; `launch.ini` accepts literal `TEMPEST_NAME=value`
 lines. Normal play has no diagnostic timeout.
 
+## Driver selection
+
+Long-press the launcher icon and choose **Graphics driver**. Bundled Turnip is
+the default; system-driver selection and importing another ARM64 driver ZIP are
+available. Changes apply after closing and reopening the game. See
+[driver settings and recovery](../docs/android-driver-selection.md).
+
 ## Defaults and checks
 
 Android defaults to 1280×720 engine/display and authored effects, FEX MaxInst500,
