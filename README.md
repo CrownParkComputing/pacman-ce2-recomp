@@ -14,3 +14,5 @@ Current evidence and remaining Android work are recorded in [`docs/ce2-port-stat
 Source is GPL-2.0-or-later. [Third-party notices](THIRD_PARTY_NOTICES.md) record the inherited runtime and dependency origins.
 
 On Android, long-press the game icon → **Graphics driver** to select bundled Turnip (the default), the system driver, or import another driver ZIP. [Driver settings](docs/android-driver-selection.md) apply on the next launch and are separate for each game.
+
+Press **L3 + R3 together** to toggle the internal settings menu. On Android, choose **Graphics driver** → **Import driver ZIP** to install another Turnip driver; the selection applies on the next game launch.

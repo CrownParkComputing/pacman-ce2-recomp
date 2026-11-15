@@ -134,3 +134,5 @@ open. See [the status report](../docs/ce2-port-status.md) for measurements,
 limitations and debugging history. The Android save is currently under
 `files/user/savedata/1/UNKNOWN/AutoSave/`; Linux uses its own CUSA04924 profile.
 Neither installation nor these build steps transfer or replace saves.
+
+The internal menu is available with **L3 + R3 together**. Its **Graphics driver** row opens the same bundled/system/import-ZIP settings. Release both sticks before toggling again.

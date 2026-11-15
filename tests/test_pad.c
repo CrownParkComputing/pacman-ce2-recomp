@@ -8,10 +8,12 @@
 
 #include "../src/runtime_pad.c"
 
-int tempest_gpu_overlay_captures_input(void) { return 0; }
+static int menu_open, other_overlay, menu_toggles;
+int tempest_gpu_overlay_captures_input(void) { return menu_open || other_overlay; }
 int tempest_skip_intro(void) { return 0; }
-int tempest_display_settings_is_open(void) { return 0; }
-void tempest_display_settings_open(void) {}
+int tempest_display_settings_is_open(void) { return menu_open; }
+void tempest_display_settings_open(void) { menu_open=1; }
+void tempest_display_settings_toggle(void) { menu_open=!menu_open; ++menu_toggles; }
 int tempest_title_back_exits(void) { return 1; }
 void tempest_exit_prompt_open(void) {}
 uintptr_t runtime_lookup(const RuntimeExport *table, size_t count, const char *name) {
@@ -103,9 +105,52 @@ static void test_buffered_read(void) {
     assert(pad_read(PAD_HANDLE,output,1)==ERR_INVALID_HANDLE);
 }
 
+static void test_menu_shortcut(void) {
+    MenuShortcut state={0};
+    const uint32_t clicks=BTN_L3|BTN_R3;
+    PadData d={.buttons=BTN_L3|BTN_CROSS};
+    menu_shortcut_sample(&state,&d,true,false,clicks);
+    assert(d.buttons==(BTN_L3|BTN_CROSS) && !menu_toggles);
+    d.buttons=clicks|BTN_CROSS;
+    menu_shortcut_sample(&state,&d,true,true,clicks);
+    assert(menu_open && menu_toggles==1 && d.buttons==BTN_CROSS);
+    for (int i=0;i<10;++i) {
+        d.buttons=clicks;
+        menu_shortcut_sample(&state,&d,true,true,clicks);
+        assert(menu_open && menu_toggles==1 && !d.buttons);
+    }
+    /* Closing another way while held cannot reopen the menu. */
+    menu_open=0; d.buttons=BTN_R3;
+    menu_shortcut_sample(&state,&d,false,true,clicks);
+    assert(!d.buttons && menu_toggles==1);
+    menu_shortcut_sample(&state,&d,true,true,clicks);
+    assert(!menu_open && menu_toggles==1);
+    menu_shortcut_sample(&state,&d,false,false,clicks);
+    menu_shortcut_sample(&state,&d,true,true,clicks);
+    assert(menu_open && menu_toggles==2);
+    menu_shortcut_sample(&state,&d,false,false,clicks);
+    menu_shortcut_sample(&state,&d,true,true,clicks);
+    assert(!menu_open && menu_toggles==3);
+    /* A save/text dialog cannot be displaced by the menu chord. */
+    other_overlay=1;
+    menu_shortcut_sample(&state,&d,false,false,clicks);
+    menu_shortcut_sample(&state,&d,true,true,clicks);
+    assert(!menu_open && menu_toggles==3);
+    other_overlay=0;
+    menu_shortcut_sample(&state,&d,true,true,clicks);
+    assert(!menu_open && menu_toggles==3);
+    /* Consume the physical clicks even with custom button mappings. */
+    menu_shortcut_sample(&state,&d,false,false,clicks);
+    d.buttons=BTN_CROSS|BTN_TRIANGLE|BTN_L1;
+    menu_shortcut_sample(&state,&d,true,true,clicks|BTN_CROSS|BTN_TRIANGLE);
+    assert(menu_open && menu_toggles==4 && d.buttons==BTN_L1);
+    menu_open=0;
+}
+
 int main(void) {
     test_default_keyboard();
     test_pad_buttons();
+    test_menu_shortcut();
     test_buffered_read();
     puts("pad tests passed");
     return 0;
