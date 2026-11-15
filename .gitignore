@@ -1,0 +1,27 @@
+/.vscode
+__pycache__/
+/.claude/
+/.copilot/
+out/
+user/
+/*.ini
+!/settings.example.ini
+*.orig
+/*.spv
+dist/
+dist-*/
+
+/game/
+/out/
+*.pkg
+*.tmp
+
+# Local Android signing, imported drivers and runtime data.
+*.apk
+*.keystore
+*.jks
+*.log
+/.env
+/.env.*
+/save/
+/savedata/
