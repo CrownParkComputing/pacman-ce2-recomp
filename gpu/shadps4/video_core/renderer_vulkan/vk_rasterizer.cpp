@@ -975,72 +975,6 @@ void Rasterizer::DiagPassBoundary(bool force) {
     diag_addresses = force ? std::array<VAddr, 8>{} : addresses;
 }
 
-bool Rasterizer::IsCe2ReducedBackgroundDraw(const GraphicsPipeline& pipeline,
-                                          const RenderState& state, bool is_indexed) {
-    static const bool enabled = [] {
-        const char* value = std::getenv("TEMPEST_CE2_REDUCED_BACKGROUND");
-        return value && value[0] == '1' && value[1] == '\0';
-    }();
-    if (!enabled) {
-        return false;
-    }
-
-    // Captured in the background-only pass, before maze composition. These are two
-    // direct grid meshes, not the separate full-resolution maze or any UI draw.
-    const auto& regs = Regs();
-    if (!is_indexed || regs.primitive_type != AmdGpu::PrimitiveType::TriangleList ||
-        regs.num_instances.NumInstances() != 1 ||
-        (regs.num_indices != 100800 && regs.num_indices != 9600) ||
-        regs.depth_control.depth_write_enable || regs.depth_control.stencil_enable) {
-        return false;
-    }
-    const auto stages = pipeline.GetStages();
-    const auto* vs = stages[u32(Shader::SwStage::Vertex)];
-    const auto* ps = stages[u32(Shader::SwStage::Fragment)];
-    if (!vs || !ps || vs->pgm_hash != 0x93dbc40185ad7ea7ULL ||
-        ps->pgm_hash != 0x80858686efbdc161ULL ||
-        ps->stores.GetAny(Shader::IR::Attribute::Depth) ||
-        ps->stores.GetAny(Shader::IR::Attribute::StencilRef)) {
-        return false;
-    }
-    // Omit no shader side effects, including storage-buffer/image atomics.
-    for (const auto* stage : stages) {
-        if (!stage) {
-            continue;
-        }
-        if (stage != vs && stage != ps) {
-            return false;
-        }
-        for (const auto& buffer : stage->buffers) {
-            if (buffer.is_written) {
-                return false;
-            }
-        }
-        for (const auto& image : stage->images) {
-            if (image.is_written || image.is_atomic) {
-                return false;
-            }
-        }
-    }
-
-    if (pipeline.GetGraphicsKey().mrt_mask != 1 || state.num_color_attachments != 1 ||
-        state.num_layers != 1 || !state.color_attachments[0].image_view ||
-        !state.depth_stencil_attachment.image_view ||
-        state.depth_stencil_attachment.image_layout != vk::ImageLayout::eDepthStencilReadOnlyOptimal ||
-        !cb_descs[0].first || !db_desc.first ||
-        !((state.width == 1280 && state.height == 720) ||
-          (state.width == 1920 && state.height == 1080))) {
-        return false;
-    }
-    const auto& color = texture_cache.GetImage(cb_descs[0].first).info;
-    const auto& depth = texture_cache.GetImage(db_desc.first).info;
-    return color.pixel_format == vk::Format::eR8G8B8A8Unorm &&
-           depth.pixel_format == vk::Format::eD32SfloatS8Uint &&
-           color.size.width == state.width && color.size.height == state.height &&
-           depth.size.width == state.width && depth.size.height == state.height &&
-           color.size.depth == 1 && depth.size.depth == 1;
-}
-
 void Rasterizer::DrawRecord(const GraphicsPipeline* pipeline, const PreparedDraw* used_prepared,
                             bool is_indexed, u32 index_offset) {
     if (DrawPipe::OnStageB()) {
@@ -1096,12 +1030,6 @@ void Rasterizer::DrawRecord(const GraphicsPipeline* pipeline, const PreparedDraw
     MarkPass(pipeline, state);
     scheduler.BeginRendering(state);
 
-    // Keep attachment clears, resource preparation and the normal post-draw cleanup.
-    const bool reduced_background = IsCe2ReducedBackgroundDraw(*pipeline, state, is_indexed);
-    if (reduced_background && ++ce2_reduced_background_draws == 1) {
-        LOG_INFO(Render_Vulkan, "CE2: reduced background omitting matched decorative grid meshes");
-    }
-
     const auto& vs_info = pipeline->GetStage(Shader::SwStage::Vertex);
     const auto& fetch_shader = pipeline->GetFetchShader();
     const auto [vertex_offset, instance_offset] = GetDrawOffsets(regs, vs_info, fetch_shader);
@@ -1112,24 +1040,22 @@ void Rasterizer::DrawRecord(const GraphicsPipeline* pipeline, const PreparedDraw
     const u32 num_instances = regs.num_instances.NumInstances();
     const u32 first_vertex = vertex_offset;
     const u32 first_instance = instance_offset;
-    if (!reduced_background) {
-        scheduler.Record([=](vk::CommandBuffer cmdbuf) {
-            const auto draw = [&] {
-                if (is_indexed) {
-                    cmdbuf.drawIndexed(num_indices, num_instances, 0, s32(first_vertex),
-                                       first_instance);
-                } else {
-                    cmdbuf.draw(num_indices, num_instances, first_vertex, first_instance);
-                }
-            };
-            cmdbuf.bindPipeline(vk::PipelineBindPoint::eGraphics, handle);
-            draw();
-            if (square) [[unlikely]] {
-                cmdbuf.bindPipeline(vk::PipelineBindPoint::eGraphics, square);
-                draw();
+    scheduler.Record([=](vk::CommandBuffer cmdbuf) {
+        const auto draw = [&] {
+            if (is_indexed) {
+                cmdbuf.drawIndexed(num_indices, num_instances, 0, s32(first_vertex),
+                                   first_instance);
+            } else {
+                cmdbuf.draw(num_indices, num_instances, first_vertex, first_instance);
             }
-        });
-    }
+        };
+        cmdbuf.bindPipeline(vk::PipelineBindPoint::eGraphics, handle);
+        draw();
+        if (square) [[unlikely]] {
+            cmdbuf.bindPipeline(vk::PipelineBindPoint::eGraphics, square);
+            draw();
+        }
+    });
     if (FrameCapture::Active()) {
         const auto* ps = pipeline->GetStages()[u32(Shader::SwStage::Fragment)];
         const std::string detail =
@@ -1143,14 +1069,6 @@ void Rasterizer::DrawRecord(const GraphicsPipeline* pipeline, const PreparedDraw
         capture_vertices.clear();
         FrameCapture::Draw(vs_info.pgm_hash, ps ? ps->pgm_hash : 0, num_indices, num_instances,
                            detail.c_str());
-        if (reduced_background) {
-            char note[192];
-            std::snprintf(note, sizeof(note),
-                          "\n  intentionally omitted: TEMPEST_CE2_REDUCED_BACKGROUND=1 "
-                          "(decorative grid, total %llu)",
-                          static_cast<unsigned long long>(ce2_reduced_background_draws));
-            FrameCapture::Note(note);
-        }
         if (const auto& bc = regs.blend_control[0]; bc.enable && regs.color_buffers[0]) {
             char note[128];
             std::snprintf(note, sizeof(note), "\n  blend ps %08x idx %u: src %u dst %u func %u z %u%u",

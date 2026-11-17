@@ -91,7 +91,7 @@ extern "C" SDL_DECLSPEC int SDL_main(int, char **) {
         setenv("TEMPEST_INTERNAL_HEIGHT","720",0);
         setenv("TEMPEST_FEX_MAX_INST","500",0);
         setenv("TEMPEST_CE2_EFFECTS_720","1",0);
-        setenv("TEMPEST_CE2_REDUCED_BACKGROUND","0",0);
+
         setenv("TEMPEST_CE2_NATIVE_COPY","1",0);
         // The bundled Turnip build supports nonblocking completion polls.
         setenv("TEMPEST_VK_DEFER_COUNTER_REFRESH","1",0);

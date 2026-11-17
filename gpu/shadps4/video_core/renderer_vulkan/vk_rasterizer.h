@@ -207,10 +207,6 @@ private:
 
     bool FilterDraw();
     bool FilterDrawPasses() const;
-    /// Opt-in omission of CE2's captured decorative grid meshes, after pass load operations.
-    bool IsCe2ReducedBackgroundDraw(const GraphicsPipeline& pipeline, const RenderState& state,
-                                   bool is_indexed);
-    u64 ce2_reduced_background_draws = 0;
     /// True for a draw of the game's motion blur while the motion blur setting is off.
     /// Everything of a direct draw after the pipeline selection (GPU thread or stage B).
     void DrawRecord(const GraphicsPipeline* pipeline, const PreparedDraw* used_prepared,
